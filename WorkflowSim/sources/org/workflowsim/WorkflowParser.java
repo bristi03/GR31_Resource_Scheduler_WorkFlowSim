@@ -167,6 +167,8 @@ public final class WorkflowParser {
                         length *= Parameters.getRuntimeScale();
                         List<Element> fileList = node.getChildren();
                         List<FileItem> mFileList = new ArrayList<>();
+                        double inputSize = 0.0;
+                        double outputSize = 0.0;
                         for (Element file : fileList) {
                             if (file.getName().toLowerCase().equals("uses")) {
                                 String fileName = file.getAttributeValue("name");//DAX version 3.3
@@ -229,11 +231,14 @@ public final class WorkflowParser {
                                      * whether a size is zero
                                      */
                                     tFile = new FileItem(fileName, size);
+                                    outputSize+=size;
                                 } else if (ReplicaCatalog.containsFile(fileName)) {
                                     tFile = ReplicaCatalog.getFile(fileName);
+                                    inputSize+=size;
                                 } else {
 
                                     tFile = new FileItem(fileName, size);
+                                    inputSize+=size;
                                     ReplicaCatalog.setFile(fileName, tFile);
                                 }
 
@@ -255,6 +260,9 @@ public final class WorkflowParser {
                             task.addRequiredFile(file.getName());
                         }
                         task.setFileList(mFileList);
+                        task.setInputSize(inputSize);
+                        task.setOutputSize(outputSize);
+                        Log.printLine("WORKFLOWPARSER:inputSize:"+task.getInputSize() + "| WORKFLOWPARSER:outputSize:"+task.getOutputSize());
                         this.getTaskList().add(task);
 
                         /**

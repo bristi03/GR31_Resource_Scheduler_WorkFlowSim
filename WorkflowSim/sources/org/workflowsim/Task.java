@@ -71,254 +71,273 @@ public class Task extends Cloudlet {
      * update finish_time)
      */
     private double taskFinishTime;
-
-    /**
-     * Allocates a new Task object. The task length should be greater than or
-     * equal to 1.
-     *
-     * @param taskId the unique ID of this Task
-     * @param taskLength the length or size (in MI) of this task to be executed
-     * in a PowerDatacenter
-     * @pre taskId >= 0
-     * @pre taskLength >= 0.0
-     * @post $none
-     */
-    public Task(
-            final int taskId,
-            final long taskLength) {
-        /**
-         * We do not use cloudletFileSize and cloudletOutputSize here. We have
-         * added a list to task and thus we don't need a cloudletFileSize or
-         * cloudletOutputSize here The utilizationModelCpu, utilizationModelRam,
-         * and utilizationModelBw are just set to be the default mode. You can
-         * change it for your own purpose.
-         */
-        super(taskId, taskLength, 1, 0, 0, new UtilizationModelFull(), new UtilizationModelFull(), new UtilizationModelFull());
-
-        this.childList = new ArrayList<>();
-        this.parentList = new ArrayList<>();
-        this.fileList = new ArrayList<>();
-        this.impact = 0.0;
-        this.taskFinishTime = -1.0;
+    private double inputSize;
+    
+    public double getInputSize() {
+        return inputSize;
     }
 
-    /**
-     * Sets the type of the task
-     *
-     * @param type the type
-     */
-    public void setType(String type) {
-        this.type = type;
+    public double getOutputSize() {
+        return outputSize;
     }
 
-    /**
-     * Gets the type of the task
-     *
-     * @return the type of the task
-     */
-    public String getType() {
-        return type;
-    }
-
-    /**
-     * Sets the priority of the task
-     *
-     * @param priority the priority
-     */
-    public void setPriority(int priority) {
-        this.priority = priority;
-    }
-
-    /**
-     * Sets the depth of the task
-     *
-     * @param depth the depth
-     */
-    public void setDepth(int depth) {
-        this.depth = depth;
-    }
-
-    /**
-     * Gets the priority of the task
-     *
-     * @return the priority of the task
-     * @pre $none
-     * @post $none
-     */
-    public int getPriority() {
-        return this.priority;
-    }
-
-    /**
-     * Gets the depth of the task
-     *
-     * @return the depth of the task
-     */
-    public int getDepth() {
-        return this.depth;
-    }
-
-    /**
-     * Gets the child list of the task
-     *
-     * @return the list of the children
-     */
-    public List<Task> getChildList() {
-        return this.childList;
-    }
-
-    /**
-     * Sets the child list of the task
-     *
-     * @param list, child list of the task
-     */
-    public void setChildList(List<Task> list) {
-        this.childList = list;
-    }
-
-    /**
-     * Sets the parent list of the task
-     *
-     * @param list, parent list of the task
-     */
-    public void setParentList(List<Task> list) {
-        this.parentList = list;
-    }
-
-    /**
-     * Adds the list to existing child list
-     *
-     * @param list, the child list to be added
-     */
-    public void addChildList(List<Task> list) {
-        this.childList.addAll(list);
-    }
-
-    /**
-     * Adds the list to existing parent list
-     *
-     * @param list, the parent list to be added
-     */
-    public void addParentList(List<Task> list) {
-        this.parentList.addAll(list);
-    }
-
-    /**
-     * Gets the list of the parent tasks
-     *
-     * @return the list of the parents
-     */
-    public List<Task> getParentList() {
-        return this.parentList;
-    }
-
-    /**
-     * Adds a task to existing child list
-     *
-     * @param task, the child task to be added
-     */
-    public void addChild(Task task) {
-        this.childList.add(task);
-    }
-
-    /**
-     * Adds a task to existing parent list
-     *
-     * @param task, the parent task to be added
-     */
-    public void addParent(Task task) {
-        this.parentList.add(task);
-    }
-
-    /**
-     * Gets the list of the files
-     *
-     * @return the list of files
-     * @pre $none
-     * @post $none
-     */
-    public List<FileItem> getFileList() {
-        return this.fileList;
-    }
-
-    /**
-     * Adds a file to existing file list
-     *
-     * @param file, the file to be added
-     */
-    public void addFile(FileItem file) {
-        this.fileList.add(file);
-    }
-
-    /**
-     * Sets a file list
-     *
-     * @param list, the file list
-     */
-    public void setFileList(List<FileItem> list) {
-        this.fileList = list;
-    }
-
-    /**
-     * Sets the impact factor
-     *
-     * @param impact, the impact factor
-     */
-    public void setImpact(double impact) {
-        this.impact = impact;
-    }
-
-    /**
-     * Gets the impact of the task
-     *
-     * @return the impact of the task
-     * @pre $none
-     * @post $none
-     */
-    public double getImpact() {
-        return this.impact;
-    }
-
-    /**
-     * Sets the finish time of the task (different to the one used in Cloudlet)
-     *
-     * @param time finish time
-     */
-    public void setTaskFinishTime(double time) {
-        this.taskFinishTime = time;
-    }
-
-    /**
-     * Gets the finish time of a task (different to the one used in Cloudlet)
-     *
-     * @return
-     */
-    public double getTaskFinishTime() {
-        return this.taskFinishTime;
-    }
-
-    /**
-     * Gets the total cost of processing or executing this task The original
-     * getProcessingCost does not take cpu cost into it also the data file in
-     * Task is stored in fileList <tt>Processing Cost = input data transfer +
-     * processing cost + output transfer cost</tt> .
-     *
-     * @return the total cost of processing Cloudlet
-     * @pre $none
-     * @post $result >= 0.0
-     */
-    @Override
-    public double getProcessingCost() {
-        // cloudlet cost: execution cost...
-
-        double cost = getCostPerSec() * getActualCPUTime();
-
-        // ...plus input data transfer cost...
-        long fileSize = 0;
-        for (FileItem file : getFileList()) {
-            fileSize += file.getSize() / Consts.MILLION;
-        }
-        cost += costPerBw * fileSize;
-        return cost;
+    private double outputSize;
+            
+                /**
+                 * Allocates a new Task object. The task length should be greater than or
+                 * equal to 1.
+                 *
+                 * @param taskId the unique ID of this Task
+                 * @param taskLength the length or size (in MI) of this task to be executed
+                 * in a PowerDatacenter
+                 * @pre taskId >= 0
+                 * @pre taskLength >= 0.0
+                 * @post 
+                 */
+                public Task(
+                        final int taskId,
+                        final long taskLength) {
+                    /**
+                     * We do not use cloudletFileSize and cloudletOutputSize here. We have
+                     * added a list to task and thus we don't need a cloudletFileSize or
+                     * cloudletOutputSize here The utilizationModelCpu, utilizationModelRam,
+                     * and utilizationModelBw are just set to be the default mode. You can
+                     * change it for your own purpose.
+                     */
+                    super(taskId, taskLength, 1, 0, 0, new UtilizationModelFull(), new UtilizationModelFull(), new UtilizationModelFull());
+            
+                    this.childList = new ArrayList<>();
+                    this.parentList = new ArrayList<>();
+                    this.fileList = new ArrayList<>();
+                    this.impact = 0.0;
+                    this.taskFinishTime = -1.0;
+                }
+            
+                /**
+                 * Sets the type of the task
+                 *
+                 * @param type the type
+                 */
+                public void setType(String type) {
+                    this.type = type;
+                }
+            
+                /**
+                 * Gets the type of the task
+                 *
+                 * @return the type of the task
+                 */
+                public String getType() {
+                    return type;
+                }
+            
+                /**
+                 * Sets the priority of the task
+                 *
+                 * @param priority the priority
+                 */
+                public void setPriority(int priority) {
+                    this.priority = priority;
+                }
+            
+                /**
+                 * Sets the depth of the task
+                 *
+                 * @param depth the depth
+                 */
+                public void setDepth(int depth) {
+                    this.depth = depth;
+                }
+            
+                /**
+                 * Gets the priority of the task
+                 *
+                 * @return the priority of the task
+                 * @pre 
+                 * @post 
+                 */
+                public int getPriority() {
+                    return this.priority;
+                }
+            
+                /**
+                 * Gets the depth of the task
+                 *
+                 * @return the depth of the task
+                 */
+                public int getDepth() {
+                    return this.depth;
+                }
+            
+                /**
+                 * Gets the child list of the task
+                 *
+                 * @return the list of the children
+                 */
+                public List<Task> getChildList() {
+                    return this.childList;
+                }
+            
+                /**
+                 * Sets the child list of the task
+                 *
+                 * @param list, child list of the task
+                 */
+                public void setChildList(List<Task> list) {
+                    this.childList = list;
+                }
+            
+                /**
+                 * Sets the parent list of the task
+                 *
+                 * @param list, parent list of the task
+                 */
+                public void setParentList(List<Task> list) {
+                    this.parentList = list;
+                }
+            
+                /**
+                 * Adds the list to existing child list
+                 *
+                 * @param list, the child list to be added
+                 */
+                public void addChildList(List<Task> list) {
+                    this.childList.addAll(list);
+                }
+            
+                /**
+                 * Adds the list to existing parent list
+                 *
+                 * @param list, the parent list to be added
+                 */
+                public void addParentList(List<Task> list) {
+                    this.parentList.addAll(list);
+                }
+            
+                /**
+                 * Gets the list of the parent tasks
+                 *
+                 * @return the list of the parents
+                 */
+                public List<Task> getParentList() {
+                    return this.parentList;
+                }
+            
+                /**
+                 * Adds a task to existing child list
+                 *
+                 * @param task, the child task to be added
+                 */
+                public void addChild(Task task) {
+                    this.childList.add(task);
+                }
+            
+                /**
+                 * Adds a task to existing parent list
+                 *
+                 * @param task, the parent task to be added
+                 */
+                public void addParent(Task task) {
+                    this.parentList.add(task);
+                }
+            
+                /**
+                 * Gets the list of the files
+                 *
+                 * @return the list of files
+                 * @pre 
+                 * @post 
+                 */
+                public List<FileItem> getFileList() {
+                    return this.fileList;
+                }
+            
+                /**
+                 * Adds a file to existing file list
+                 *
+                 * @param file, the file to be added
+                 */
+                public void addFile(FileItem file) {
+                    this.fileList.add(file);
+                }
+            
+                /**
+                 * Sets a file list
+                 *
+                 * @param list, the file list
+                 */
+                public void setFileList(List<FileItem> list) {
+                    this.fileList = list;
+                }
+            
+                /**
+                 * Sets the impact factor
+                 *
+                 * @param impact, the impact factor
+                 */
+                public void setImpact(double impact) {
+                    this.impact = impact;
+                }
+            
+                /**
+                 * Gets the impact of the task
+                 *
+                 * @return the impact of the task
+                 * @pre 
+                 * @post 
+                 */
+                public double getImpact() {
+                    return this.impact;
+                }
+            
+                /**
+                 * Sets the finish time of the task (different to the one used in Cloudlet)
+                 *
+                 * @param time finish time
+                 */
+                public void setTaskFinishTime(double time) {
+                    this.taskFinishTime = time;
+                }
+            
+                /**
+                 * Gets the finish time of a task (different to the one used in Cloudlet)
+                 *
+                 * @return
+                 */
+                public double getTaskFinishTime() {
+                    return this.taskFinishTime;
+                }
+            
+                /**
+                 * Gets the total cost of processing or executing this task The original
+                 * getProcessingCost does not take cpu cost into it also the data file in
+                 * Task is stored in fileList <tt>Processing Cost = input data transfer +
+                 * processing cost + output transfer cost</tt> .
+                 *
+                 * @return the total cost of processing Cloudlet
+                 * @pre 
+                 * @post  >= 0.0
+                 */
+                @Override
+                public double getProcessingCost() {
+                    // cloudlet cost: execution cost...
+            
+                    double cost = getCostPerSec() * getActualCPUTime();
+            
+                    // ...plus input data transfer cost...
+                    long fileSize = 0;
+                    for (FileItem file : getFileList()) {
+                        fileSize += file.getSize() / Consts.MILLION;
+                    }
+                    cost += costPerBw * fileSize;
+                    return cost;
+                }
+            
+                public void setInputSize(double inputSize) {
+                    this.inputSize = inputSize;
+            }
+        
+            public void setOutputSize(double outputSize) {
+                this.outputSize = outputSize;
     }
 }
