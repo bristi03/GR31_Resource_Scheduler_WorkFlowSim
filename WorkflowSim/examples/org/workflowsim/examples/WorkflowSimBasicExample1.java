@@ -46,6 +46,9 @@ import org.workflowsim.utils.OverheadParameters;
 import org.workflowsim.utils.Parameters;
 import org.workflowsim.utils.ReplicaCatalog;
 import org.workflowsim.utils.Parameters.ClassType;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import org.workflowsim.Job;
 
 /**
  * This WorkflowSimExample creates a workflow planner, a workflow engine, and
@@ -97,7 +100,7 @@ public class WorkflowSimBasicExample1 {
             /**
              * Should change this based on real physical path
              */
-            String daxPath = "/Users/weiweich/NetBeansProjects/WorkflowSim-1.0/config/dax/Montage_100.xml";
+            String daxPath = "D:/Final Year Project/Code/Resource_Schedular/WorkflowSim/config/dax/HEFT_paper.xml";
             File daxFile = new File(daxPath);
             if (!daxFile.exists()) {
                 Log.printLine("Warning: Please replace daxPath with the physical path in your working environment!");
@@ -168,6 +171,36 @@ public class WorkflowSimBasicExample1 {
             CloudSim.startSimulation();
             List<Job> outputList0 = wfEngine.getJobsReceivedList();
             CloudSim.stopSimulation();
+
+            List<Job> jobList = wfEngine.getJobsReceivedList();
+
+            try {
+                // Create the file object
+                File file = new File("training_data_heft.csv");
+                // Get the absolute path of the file
+                String absolutePath = file.getAbsolutePath();
+
+                // Create the PrintWriter
+                try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
+                    pw.println("JobID,TaskLength,VMID,StartTime,FinishTime");
+                    for (Job job : jobList) {
+                        pw.println(job.getCloudletId() + "," +
+                                job.getCloudletLength() + "," +
+                                job.getVmId() + "," +
+                                job.getExecStartTime() + "," +
+                                job.getFinishTime());
+                    }
+
+                    // Print the absolute path
+                    Log.printLine("✅ Training data saved to: " + absolutePath);
+                } catch (Exception e) {
+                    Log.printLine("Training data could not be saved to training_data.csv");
+                    e.printStackTrace();
+                }
+            } catch (Exception e) {
+                Log.printLine("Error occurred while processing the file path");
+                e.printStackTrace();
+            }
             printJobList(outputList0);
         } catch (Exception e) {
             Log.printLine("The simulation has been terminated due to an unexpected error");
