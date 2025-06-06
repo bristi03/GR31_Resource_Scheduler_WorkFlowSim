@@ -71,17 +71,6 @@ public class Task extends Cloudlet {
      * update finish_time)
      */
     private double taskFinishTime;
-    private double inputSize;
-    
-    public double getInputSize() {
-        return inputSize;
-    }
-
-    public double getOutputSize() {
-        return outputSize;
-    }
-
-    private double outputSize;
             
                 /**
                  * Allocates a new Task object. The task length should be greater than or
@@ -332,12 +321,4 @@ public class Task extends Cloudlet {
                     cost += costPerBw * fileSize;
                     return cost;
                 }
-            
-                public void setInputSize(double inputSize) {
-                    this.inputSize = inputSize;
-            }
-        
-            public void setOutputSize(double outputSize) {
-                this.outputSize = outputSize;
-    }
 }

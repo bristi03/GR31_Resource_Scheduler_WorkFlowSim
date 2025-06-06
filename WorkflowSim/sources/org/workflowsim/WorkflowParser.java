@@ -262,7 +262,6 @@ public final class WorkflowParser {
                         task.setFileList(mFileList);
                         task.setInputSize(inputSize);
                         task.setOutputSize(outputSize);
-                        Log.printLine("WORKFLOWPARSER:inputSize:"+task.getInputSize() + "| WORKFLOWPARSER:outputSize:"+task.getOutputSize());
                         this.getTaskList().add(task);
 
                         /**

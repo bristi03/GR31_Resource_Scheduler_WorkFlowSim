@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
+
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.CloudletSchedulerSpaceShared;
 import org.cloudbus.cloudsim.DatacenterCharacteristics;
@@ -65,20 +67,26 @@ public class WorkflowSimBasicExample1 {
         //Creates a container to store VMs. This list is passed to the broker later
         LinkedList<CondorVM> list = new LinkedList<>();
 
-        //VM Parameters
-        long size = 10000; //image size (MB)
-        int ram = 512; //vm memory (MB)
-        int mips = 1000;
-        long bw = 1000;
-        int pesNumber = 1; //number of cpus
-        String vmm = "Xen"; //VMM name
+        long baseSize = 10000; // image size (MB)
+        int baseRam = 512;     // base RAM (MB)
+        int baseMips = 1000;   // base MIPS
+        long baseBw = 1000;    // base bandwidth
+        int pesNumber = 1;     // number of cpus
+        String vmm = "Xen";    // VMM name
 
-        //create VMs
-        CondorVM[] vm = new CondorVM[vms];
+        Random rand = new Random();
+
+        // Create VMs with random parameters
         for (int i = 0; i < vms; i++) {
-            double ratio = 1.0;
-            vm[i] = new CondorVM(i, userId, mips * ratio, pesNumber, ram, bw, size, vmm, new CloudletSchedulerSpaceShared());
-            list.add(vm[i]);
+            int mips = baseMips + rand.nextInt(1000);     
+            int ram = baseRam + rand.nextInt(1024);     
+            long bw = baseBw + rand.nextInt(1000);       
+            long size = baseSize + rand.nextInt(10000);  
+            int pesNum = pesNumber + rand.nextInt(3);
+
+            CondorVM vm = new CondorVM(i, userId, mips, pesNum, ram, bw, size, vmm, new CloudletSchedulerSpaceShared());
+
+            list.add(vm);
         }
         return list;
     }
@@ -90,137 +98,138 @@ public class WorkflowSimBasicExample1 {
      */
     public static void main(String[] args) {
         try {
-            // First step: Initialize the WorkflowSim package. 
-            /**
-             * However, the exact number of vms may not necessarily be vmNum If
-             * the data center or the host doesn't have sufficient resources the
-             * exact vmNum would be smaller than that. Take care.
-             */
-            int vmNum = 20;//number of vms;
-            /**
-             * Should change this based on real physical path
-             */
-            String daxPath = "D:/Resource_Schedular/WorkflowSim/config/dax/HEFT_paper.xml";
-            File daxFile = new File(daxPath);
-            if (!daxFile.exists()) {
-                Log.printLine("Warning: Please replace daxPath with the physical path in your working environment!");
-                return;
-            }
+            int refNumber = 22;
+            String daxFolderPath = "D:/Resource_Schedular/WorkflowSim/config/dax";
+            File daxFolder = new File(daxFolderPath);
+            File[] daxFiles = daxFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".xml"));
 
-            /**
-             * Since we are using MINMIN scheduling algorithm, the planning
-             * algorithm should be INVALID such that the planner would not
-             * override the result of the scheduler
-             */
-            Parameters.SchedulingAlgorithm sch_method = Parameters.SchedulingAlgorithm.STATIC;
-            Parameters.PlanningAlgorithm pln_method = Parameters.PlanningAlgorithm.HEFT;
-            ReplicaCatalog.FileSystem file_system = ReplicaCatalog.FileSystem.SHARED;
+            //Initialize file headers for csv outputs
+            List<PrintWriter> outputFiles = CreateOutputFiles();
 
-            /**
-             * No overheads
-             */
-            OverheadParameters op = new OverheadParameters(0, null, null, null, null, 0);
+            for(File CurrDaxFile : daxFiles) {
+                for(int i=0; i<10; i++) {
+                // First step: Initialize the WorkflowSim package.
+                refNumber++;
+                String ref = String.format("HEFT%05d", refNumber);
+                Random rand = new Random();
+                int vmNum = 7 + rand.nextInt(5); //number of vms
 
-            /**
-             * No Clustering
-             */
-            ClusteringParameters.ClusteringMethod method = ClusteringParameters.ClusteringMethod.NONE;
-            ClusteringParameters cp = new ClusteringParameters(0, 0, method, null);
-
-            /**
-             * Initialize static parameters
-             */
-            Parameters.init(vmNum, daxPath, null,
-                    null, op, cp, sch_method, pln_method,
-                    null, 0);
-            ReplicaCatalog.init(file_system);
-
-            // before creating any entities.
-            int num_user = 1;   // number of grid users
-            Calendar calendar = Calendar.getInstance();
-            boolean trace_flag = false;  // mean trace events
-
-            // Initialize the CloudSim library
-            CloudSim.init(num_user, calendar, trace_flag);
-
-            WorkflowDatacenter datacenter0 = createDatacenter("Datacenter_0");
-
-            /**
-             * Create a WorkflowPlanner with one schedulers.
-             */
-            WorkflowPlanner wfPlanner = new WorkflowPlanner("planner_0", 1);
-            /**
-             * Create a WorkflowEngine.
-             */
-            WorkflowEngine wfEngine = wfPlanner.getWorkflowEngine();
-            /**
-             * Create a list of VMs.The userId of a vm is basically the id of
-             * the scheduler that controls this vm.
-             */
-            List<CondorVM> vmlist0 = createVM(wfEngine.getSchedulerId(0), Parameters.getVmNum());
-
-            /**
-             * Submits this list of vms to this WorkflowEngine.
-             */
-            wfEngine.submitVmList(vmlist0, 0);
-
-            /**
-             * Binds the data centers with the scheduler.
-             */
-            wfEngine.bindSchedulerDatacenter(datacenter0.getId(), 0);
-            CloudSim.startSimulation();
-            List<Job> outputList0 = wfEngine.getJobsReceivedList();
-            CloudSim.stopSimulation();
-
-            List<Job> jobList = wfEngine.getJobsReceivedList();
-
-            try {
-                // Create the file object
-                File file = new File("training_data_heft_1.csv");
-                // Get the absolute path of the file
-                String absolutePath = file.getAbsolutePath();
-
-                // Create the PrintWriter
-                try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-                    pw.println("JobID,TaskID(s),DataCenterID,VMID,NetworkUsage,StartTime,FinishTime");
-
-                    for (Job job : jobList) {
-                        StringBuilder taskIds = new StringBuilder();
-                        for (Task task : job.getTaskList()) {
-                            taskIds.append(task.getCloudletId()).append(";");
-                        }
-                        // Remove trailing semicolon
-                        if (taskIds.length() > 0) {
-                            taskIds.setLength(taskIds.length() - 1);
-                        }
-
-                        pw.println(
-                            job.getCloudletId() + "," +
-                            "\"" + taskIds + "\"," +  // wrap in quotes to handle semicolons
-                            job.getResourceId() + "," +
-                            job.getVmId() + "," +
-                            job.getInputSize() + "," +
-                            job.getExecStartTime() + "," +
-                            job.getFinishTime()
-                        );
-                    }
-
-                    for (Job job : jobList) {
-                        double net = job.getInputSize() + job.getOutputSize();
-                        Log.printLine("Job " + job.getCloudletId() + " network usage: " + net + " bytes");
-                    }
-
-                    // Print the absolute path
-                    Log.printLine("✅ Training data saved to: " + absolutePath);
-                } catch (Exception e) {
-                    Log.printLine("Training data could not be saved to training_data.csv");
-                    e.printStackTrace();
+                String daxPath = String.join("/",daxFolderPath,CurrDaxFile.getName());
+                Log.printLine(daxPath);
+                File daxFile = new File(daxPath);
+                if (!daxFile.exists()) {
+                    Log.printLine("Warning: Please replace daxPath with the physical path in your working environment!");
+                    return;
                 }
-            } catch (Exception e) {
-                Log.printLine("Error occurred while processing the file path");
-                e.printStackTrace();
+                
+                //Write to Input_Main.csv
+                outputFiles.get(0).println(ref+","+vmNum+","+daxFile);
+
+                Parameters.SchedulingAlgorithm sch_method = Parameters.SchedulingAlgorithm.STATIC;
+                Parameters.PlanningAlgorithm pln_method = Parameters.PlanningAlgorithm.HEFT;
+                ReplicaCatalog.FileSystem file_system = ReplicaCatalog.FileSystem.SHARED;
+                
+                /**
+                 * No overheads
+                 */
+                OverheadParameters op = new OverheadParameters(0, null, null, null, null, 0);
+
+                /**
+                 * No Clustering
+                 */
+                ClusteringParameters.ClusteringMethod method = ClusteringParameters.ClusteringMethod.NONE;
+                ClusteringParameters cp = new ClusteringParameters(0, 0, method, null);
+
+                /**
+                 * Initialize static parameters
+                 */
+                Parameters.init(vmNum, daxPath, null,
+                        null, op, cp, sch_method, pln_method,
+                        null, 0);
+                ReplicaCatalog.init(file_system);
+
+                // before creating any entities.
+                int num_user = 1;   // number of grid users
+                Calendar calendar = Calendar.getInstance();
+                boolean trace_flag = true;  // mean trace events
+
+                // Initialize the CloudSim library
+                CloudSim.init(num_user, calendar, trace_flag);
+                WorkflowDatacenter datacenter0 = createDatacenter("Datacenter_0");
+                WorkflowPlanner wfPlanner = new WorkflowPlanner("Planner_0", 1);
+                /**
+                 * Create a WorkflowEngine.
+                 */
+                WorkflowEngine wfEngine = wfPlanner.getWorkflowEngine();
+                /**
+                 * Create a list of VMs.The userId of a vm is basically the id of
+                 * the scheduler that controls this vm.
+                 */
+                List<CondorVM> vmlist0 = createVM(wfEngine.getSchedulerId(0), Parameters.getVmNum());
+
+                for(CondorVM vm: vmlist0) {
+                    outputFiles.get(1).println(
+                        ref + "," +
+                        vm.getId() + "," +
+                        vm.getSize() + "," +
+                        vm.getRam() + "," +
+                        vm.getMips() + "," +
+                        vm.getBw() + "," +
+                        vm.getNumberOfPes()
+                    );
+                }
+
+                /**
+                 * Submits this list of vms to this WorkflowEngine.
+                 */
+                wfEngine.submitVmList(vmlist0, 0);
+
+                /**
+                 * Binds the data centers with the scheduler.
+                 */
+                wfEngine.bindSchedulerDatacenter(datacenter0.getId(), 0);
+                CloudSim.startSimulation();
+                List<Job> outputList0 = wfEngine.getJobsReceivedList();
+                CloudSim.stopSimulation();
+
+                List<Job> jobList = wfEngine.getJobsReceivedList();
+
+                    try {
+                        for (Job job : jobList) {
+                            StringBuilder taskIds = new StringBuilder();
+                            for (Task task : job.getTaskList()) {
+                                taskIds.append(task.getCloudletId()).append(";");
+                            }
+                            // Remove trailing semicolon
+                            if (taskIds.length() > 0) {
+                                taskIds.setLength(taskIds.length() - 1);
+                            }
+
+                            outputFiles.get(2).println(
+                                ref + "," +
+                                job.getCloudletId() + "," +
+                                "\"" + taskIds + "\"," +  // wrap in quotes to handle semicolons
+                                job.getResourceId() + "," +
+                                job.getVmId() + "," +
+                                job.getDepth() + "," +
+                                job.getActualCPUTime() + "," +
+                                job.getExecStartTime() + "," +
+                                job.getFinishTime() 
+                            );
+                        }
+
+                        for (Job job : jobList) {
+                            double net = job.getInputSize() + job.getOutputSize();
+                            Log.printLine("Job " + job.getCloudletId() + " network usage: " + net + " bytes");
+                        }
+
+                    } catch (Exception e) {
+                        Log.printLine("Training data could not be saved to Output_HEFT.csv");
+                        e.printStackTrace();
+                    }
+                printJobList(outputList0);
+                }
             }
-            printJobList(outputList0);
         } catch (Exception e) {
             Log.printLine("The simulation has been terminated due to an unexpected error");
         }
@@ -238,14 +247,14 @@ public class WorkflowSimBasicExample1 {
         //    a Machine.
         for (int i = 1; i <= 20; i++) {
             List<Pe> peList1 = new ArrayList<>();
-            int mips = 2000;
+            int mips = 10000;
             // 3. Create PEs and add these into the list.
             //for a quad-core machine, a list of 4 PEs is required:
             peList1.add(new Pe(0, new PeProvisionerSimple(mips))); // need to store Pe id and MIPS Rating
             peList1.add(new Pe(1, new PeProvisionerSimple(mips)));
 
             int hostId = 0;
-            int ram = 2048; //host memory (MB)
+            int ram = 16384; //host memory (MB)
             long storage = 1000000; //host storage
             int bw = 10000;
             hostList.add(
@@ -293,6 +302,44 @@ public class WorkflowSimBasicExample1 {
             e.printStackTrace();
         }
         return datacenter;
+    }
+
+    /**
+     * Creates output files and returns the printwriter
+     * 
+     * @param list
+     */
+    protected static List<PrintWriter> CreateOutputFiles() {
+        List<PrintWriter> pwList = new ArrayList<>();
+
+    String[] fileNames = {
+        "Input_Main.csv",
+        "VM_Parameters.csv",
+        "Output_HEFT.csv"
+    };
+
+    String[] headers = {
+        "Ref_No,VM_No,DAX_Path",
+        "Ref_No,VM_ID,ImgSize,VM_Memory,MIPs,Bandwidth,PES",
+        "Ref_No,Job_ID,Task_ID,DataCenter_ID,VM_ID,Job_Depth,Actual_CPU_Time,Start_Time,Finish_Time"
+    };
+
+    for (int i = 0; i < fileNames.length; i++) {
+        File file = new File(fileNames[i]);
+        boolean writeHeader = !file.exists() || file.length() == 0;
+
+        try {
+            PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+            if (writeHeader) {
+                pw.println(headers[i]);
+            }
+            pwList.add(pw);
+        } catch (Exception e) {
+            Log.printLine("Error occurred while writing to " + fileNames[i]);
+            e.printStackTrace();
+        }
+    }
+        return pwList;
     }
 
     /**
