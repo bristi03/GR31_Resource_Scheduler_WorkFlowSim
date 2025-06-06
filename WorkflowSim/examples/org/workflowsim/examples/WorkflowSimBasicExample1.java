@@ -100,7 +100,7 @@ public class WorkflowSimBasicExample1 {
             /**
              * Should change this based on real physical path
              */
-            String daxPath = "D:/Final Year Project/Code/Resource_Schedular/WorkflowSim/config/dax/HEFT_paper.xml";
+            String daxPath = "D:/Resource_Schedular/WorkflowSim/config/dax/HEFT_paper.xml";
             File daxFile = new File(daxPath);
             if (!daxFile.exists()) {
                 Log.printLine("Warning: Please replace daxPath with the physical path in your working environment!");
@@ -112,8 +112,8 @@ public class WorkflowSimBasicExample1 {
              * algorithm should be INVALID such that the planner would not
              * override the result of the scheduler
              */
-            Parameters.SchedulingAlgorithm sch_method = Parameters.SchedulingAlgorithm.MINMIN;
-            Parameters.PlanningAlgorithm pln_method = Parameters.PlanningAlgorithm.INVALID;
+            Parameters.SchedulingAlgorithm sch_method = Parameters.SchedulingAlgorithm.STATIC;
+            Parameters.PlanningAlgorithm pln_method = Parameters.PlanningAlgorithm.HEFT;
             ReplicaCatalog.FileSystem file_system = ReplicaCatalog.FileSystem.SHARED;
 
             /**
@@ -176,19 +176,38 @@ public class WorkflowSimBasicExample1 {
 
             try {
                 // Create the file object
-                File file = new File("training_data_heft.csv");
+                File file = new File("training_data_heft_1.csv");
                 // Get the absolute path of the file
                 String absolutePath = file.getAbsolutePath();
 
                 // Create the PrintWriter
                 try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-                    pw.println("JobID,TaskLength,VMID,StartTime,FinishTime");
+                    pw.println("JobID,TaskID(s),DataCenterID,VMID,NetworkUsage,StartTime,FinishTime");
+
                     for (Job job : jobList) {
-                        pw.println(job.getCloudletId() + "," +
-                                job.getCloudletLength() + "," +
-                                job.getVmId() + "," +
-                                job.getExecStartTime() + "," +
-                                job.getFinishTime());
+                        StringBuilder taskIds = new StringBuilder();
+                        for (Task task : job.getTaskList()) {
+                            taskIds.append(task.getCloudletId()).append(";");
+                        }
+                        // Remove trailing semicolon
+                        if (taskIds.length() > 0) {
+                            taskIds.setLength(taskIds.length() - 1);
+                        }
+
+                        pw.println(
+                            job.getCloudletId() + "," +
+                            "\"" + taskIds + "\"," +  // wrap in quotes to handle semicolons
+                            job.getResourceId() + "," +
+                            job.getVmId() + "," +
+                            job.getInputSize() + "," +
+                            job.getExecStartTime() + "," +
+                            job.getFinishTime()
+                        );
+                    }
+
+                    for (Job job : jobList) {
+                        double net = job.getInputSize() + job.getOutputSize();
+                        Log.printLine("Job " + job.getCloudletId() + " network usage: " + net + " bytes");
                     }
 
                     // Print the absolute path
