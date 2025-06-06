@@ -91,6 +91,26 @@ public class Cloudlet {
 	/** The ToS for sending Cloudlet over the network. */
 	private int netToS;
 
+	private double inputSize;
+
+	public double getInputSize() {
+		return inputSize;
+	}
+
+	public void setInputSize(double inputSize) {
+		this.inputSize = inputSize;
+	}
+
+	public double getOutputSize() {
+		return outputSize;
+	}
+
+	public void setOutputSize(double outputSize) {
+		this.outputSize = outputSize;
+	}
+
+	private double outputSize;
+
 	// //////////////////////////////////////////
 	// Below are CONSTANTS attributes
 	/** The Cloudlet has been created and added to the CloudletList object. */
