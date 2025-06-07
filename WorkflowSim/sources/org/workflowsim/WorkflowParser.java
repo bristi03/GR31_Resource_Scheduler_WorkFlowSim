@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.Log;
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -167,8 +169,8 @@ public final class WorkflowParser {
                         length *= Parameters.getRuntimeScale();
                         List<Element> fileList = node.getChildren();
                         List<FileItem> mFileList = new ArrayList<>();
-                        double inputSize = 0.0;
-                        double outputSize = 0.0;
+                        long inputSize = 0;
+                        long outputSize = 0;
                         for (Element file : fileList) {
                             if (file.getName().toLowerCase().equals("uses")) {
                                 String fileName = file.getAttributeValue("name");//DAX version 3.3
@@ -241,7 +243,7 @@ public final class WorkflowParser {
                                     inputSize+=size;
                                     ReplicaCatalog.setFile(fileName, tFile);
                                 }
-
+                                
                                 tFile.setType(type);
                                 mFileList.add(tFile);
 
@@ -249,8 +251,12 @@ public final class WorkflowParser {
                         }
                         Task task;
                         //In case of multiple workflow submission. Make sure the jobIdStartsFrom is consistent.
+                        // synchronized (this) {
+                        //     task = new Task(this.jobIdStartsFrom, length);
+                        //     this.jobIdStartsFrom++;
+                        // }
                         synchronized (this) {
-                            task = new Task(this.jobIdStartsFrom, length);
+                            task = new Task(this.jobIdStartsFrom, length, inputSize);
                             this.jobIdStartsFrom++;
                         }
                         task.setType(nodeType);
@@ -260,9 +266,8 @@ public final class WorkflowParser {
                             task.addRequiredFile(file.getName());
                         }
                         task.setFileList(mFileList);
-                        task.setInputSize(inputSize);
-                        task.setOutputSize(outputSize);
                         this.getTaskList().add(task);
+                        
 
                         /**
                          * Add dependencies info.

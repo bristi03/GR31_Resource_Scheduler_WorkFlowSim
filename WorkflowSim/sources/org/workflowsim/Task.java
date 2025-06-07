@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Consts;
+import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.UtilizationModelFull;
 
 /**
@@ -86,6 +87,25 @@ public class Task extends Cloudlet {
                 public Task(
                         final int taskId,
                         final long taskLength) {
+                    /**
+                     * We do not use cloudletFileSize and cloudletOutputSize here. We have
+                     * added a list to task and thus we don't need a cloudletFileSize or
+                     * cloudletOutputSize here The utilizationModelCpu, utilizationModelRam,
+                     * and utilizationModelBw are just set to be the default mode. You can
+                     * change it for your own purpose.
+                     */
+                    super(taskId, taskLength, 1, 0, 0, new UtilizationModelFull(), new UtilizationModelFull(), new UtilizationModelFull());
+            
+                    this.childList = new ArrayList<>();
+                    this.parentList = new ArrayList<>();
+                    this.fileList = new ArrayList<>();
+                    this.impact = 0.0;
+                    this.taskFinishTime = -1.0;
+                }
+
+                public Task(
+                        final int taskId,
+                        final long taskLength, Long fileSize) {
                     /**
                      * We do not use cloudletFileSize and cloudletOutputSize here. We have
                      * added a list to task and thus we don't need a cloudletFileSize or
@@ -320,5 +340,13 @@ public class Task extends Cloudlet {
                     }
                     cost += costPerBw * fileSize;
                     return cost;
+                }
+
+                public double getTotalFileSize() {
+                    double fileSize = 0;
+                    for (FileItem file : getFileList()) {
+                        fileSize += ((double) file.getSize()) / Consts.MILLION;
+                    }
+                    return fileSize;
                 }
 }
