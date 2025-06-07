@@ -40,9 +40,9 @@ import org.workflowsim.Job;
 
 public class WorkFlowSimMain {
 
-    static String DAX_FILE_NAME = "CyberShake_50.xml";
+    static String DAX_FILE_NAME;
     static String RUN_MODE;
-    static int VM_NUM = 5;
+    static int VM_NUM;
 
     public static void configureBasic(int vmNum, String daxFile, String mode) {
         DAX_FILE_NAME = daxFile;
@@ -86,11 +86,11 @@ public class WorkFlowSimMain {
              * the data center or the host doesn't have sufficient resources the
              * exact vmNum would be smaller than that. Take care.
              */
-            int vmNum = VM_NUM;//number of vms;
+            int vmNum = Integer.parseInt(args[0]);//number of vms;
             /**
              * Should change this based on real physical path
              */
-            String daxPath = String.join("/","D:/Resource_Schedular/WorkflowSim/config/dax",DAX_FILE_NAME);
+            String daxPath = String.join("/","D:/Resource_Schedular/WorkflowSim/config/dax",args[1]);
             File daxFile = new File(daxPath);
             if (!daxFile.exists()) {
                 Log.printLine("Warning: Please replace daxPath with the physical path in your working environment!");
