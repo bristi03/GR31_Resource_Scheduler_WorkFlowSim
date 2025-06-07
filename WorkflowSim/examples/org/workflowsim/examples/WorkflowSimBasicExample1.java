@@ -98,7 +98,7 @@ public class WorkflowSimBasicExample1 {
      */
     public static void main(String[] args) {
         try {
-            int refNumber = 22;
+            int refNumber = 0;
             String daxFolderPath = "D:/Resource_Schedular/WorkflowSim/config/dax";
             File daxFolder = new File(daxFolderPath);
             File[] daxFiles = daxFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".xml"));
@@ -210,6 +210,8 @@ public class WorkflowSimBasicExample1 {
                                 job.getCloudletId() + "," +
                                 "\"" + taskIds + "\"," +  // wrap in quotes to handle semicolons
                                 job.getResourceId() + "," +
+                                job.getCloudletLength() + "," +
+                                job.getTotalFileSize() + "," +
                                 job.getVmId() + "," +
                                 job.getDepth() + "," +
                                 job.getActualCPUTime() + "," +
@@ -313,15 +315,15 @@ public class WorkflowSimBasicExample1 {
         List<PrintWriter> pwList = new ArrayList<>();
 
     String[] fileNames = {
-        "Input_Main.csv",
-        "VM_Parameters.csv",
-        "Output_HEFT.csv"
+        "Input_Main_2.csv",
+        "VM_Parameters_2.csv",
+        "Output_HEFT_2.csv"
     };
 
     String[] headers = {
         "Ref_No,VM_No,DAX_Path",
         "Ref_No,VM_ID,ImgSize,VM_Memory,MIPs,Bandwidth,PES",
-        "Ref_No,Job_ID,Task_ID,DataCenter_ID,VM_ID,Job_Depth,Actual_CPU_Time,Start_Time,Finish_Time"
+        "Ref_No,Job_ID,Task_ID,TaskMI,TaskSize,DataCenter_ID,VM_ID,Job_Depth,Actual_CPU_Time,Start_Time,Finish_Time"
     };
 
     for (int i = 0; i < fileNames.length; i++) {

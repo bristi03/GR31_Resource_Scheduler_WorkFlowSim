@@ -1,18 +1,3 @@
-/**
- * Copyright 2012-2013 University Of Southern California
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
 package org.workflowsim.examples;
 
 import java.io.File;
@@ -21,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
+
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.CloudletSchedulerSpaceShared;
 import org.cloudbus.cloudsim.DatacenterCharacteristics;
@@ -36,6 +23,7 @@ import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
 import org.workflowsim.CondorVM;
+import org.workflowsim.Task;
 import org.workflowsim.WorkflowDatacenter;
 import org.workflowsim.Job;
 import org.workflowsim.WorkflowEngine;
@@ -44,49 +32,52 @@ import org.workflowsim.utils.ClusteringParameters;
 import org.workflowsim.utils.OverheadParameters;
 import org.workflowsim.utils.Parameters;
 import org.workflowsim.utils.ReplicaCatalog;
+import org.workflowsim.utils.Parameters.ClassType;
+import org.cloudbus.cloudsim.Log;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import org.workflowsim.Job;
 
-/**
- * This WorkflowSimMultipleWorkflowsExample1 submits multiple workflows at a
- * time
- *
- * @author Weiwei Chen
- * @since WorkflowSim Toolkit 1.0
- * @date Nov 9, 2014
- */
-public class WorkflowSimMultipleWorkflowsExample1 {
+public class WorkFlowSimMain {
+
+    static String DAX_FILE_NAME = "CyberShake_50.xml";
+    static String RUN_MODE;
+    static int VM_NUM = 5;
+
+    public static void configureBasic(int vmNum, String daxFile, String mode) {
+        DAX_FILE_NAME = daxFile;
+        RUN_MODE = mode;
+        VM_NUM = vmNum;
+    }
 
     protected static List<CondorVM> createVM(int userId, int vms) {
-
-        //Creates a container to store VMs. This list is passed to the broker later
         LinkedList<CondorVM> list = new LinkedList<>();
 
-        //VM Parameters
-        long size = 10000; //image size (MB)
-        int ram = 512; //vm memory (MB)
-        int mips = 1000;
-        long bw = 1000;
-        int pesNumber = 1; //number of cpus
-        String vmm = "Xen"; //VMM name
+        long baseSize = 10000; // image size (MB)
+        int baseRam = 512;     // base RAM (MB)
+        int baseMips = 1000;   // base MIPS
+        long baseBw = 1000;    // base bandwidth
+        int pesNumber = 1;     // number of cpus
+        String vmm = "Xen";    // VMM name
 
-        //create VMs
-        CondorVM[] vm = new CondorVM[vms];
+        Random rand = new Random();
 
+        // Create VMs with random parameters
         for (int i = 0; i < vms; i++) {
-            double ratio = 1.0;
-            vm[i] = new CondorVM(i, userId, mips * ratio, pesNumber, ram, bw, size, vmm, new CloudletSchedulerSpaceShared());
-            list.add(vm[i]);
-        }
+            int mips = baseMips + rand.nextInt(1000);     
+            int ram = baseRam + rand.nextInt(1024);     
+            long bw = baseBw + rand.nextInt(1000);       
+            long size = baseSize + rand.nextInt(10000);  
+            int pesNum = pesNumber + rand.nextInt(3);
 
+            CondorVM vm = new CondorVM(i, userId, mips, pesNum, ram, bw, size, vmm, new CloudletSchedulerSpaceShared());
+
+            list.add(vm);
+        }
         return list;
     }
 
-    ////////////////////////// STATIC METHODS ///////////////////////
-    /**
-     * Creates main() to run this example This example has only one datacenter
-     * and one storage
-     */
     public static void main(String[] args) {
-
         try {
             // First step: Initialize the WorkflowSim package. 
 
@@ -95,24 +86,15 @@ public class WorkflowSimMultipleWorkflowsExample1 {
              * the data center or the host doesn't have sufficient resources the
              * exact vmNum would be smaller than that. Take care.
              */
-            int vmNum = 20;//number of vms;
+            int vmNum = VM_NUM;//number of vms;
             /**
              * Should change this based on real physical path
              */
-            List<String> daxPaths = new ArrayList<>();
-            daxPaths.add("D:/Resource_Schedular/WorkflowSim/config/dax/Montage_100.xml");
-            daxPaths.add("D:/Resource_Schedular/WorkflowSim/config/dax/Montage_25.xml");
-            // daxPaths.add("D:/Resource_Schedular/WorkflowSim/config/dax/Montage_1000.xml");
-            /**
-             * Check every file must exist
-             */
-            File daxFile;
-            for (String daxPath : daxPaths) {
-                daxFile = new File(daxPath);
-                if (!daxFile.exists()) {
-                    Log.printLine("Warning: Please replace daxPath with the physical path in your working environment!");
-                    return;
-                }
+            String daxPath = String.join("/","D:/Resource_Schedular/WorkflowSim/config/dax",DAX_FILE_NAME);
+            File daxFile = new File(daxPath);
+            if (!daxFile.exists()) {
+                Log.printLine("Warning: Please replace daxPath with the physical path in your working environment!");
+                return;
             }
 
             /**
@@ -120,8 +102,8 @@ public class WorkflowSimMultipleWorkflowsExample1 {
              * algorithm should be INVALID such that the planner would not
              * override the result of the scheduler
              */
-            Parameters.SchedulingAlgorithm sch_method = Parameters.SchedulingAlgorithm.MINMIN;
-            Parameters.PlanningAlgorithm pln_method = Parameters.PlanningAlgorithm.INVALID;
+            Parameters.SchedulingAlgorithm sch_method = Parameters.SchedulingAlgorithm.STATIC;
+            Parameters.PlanningAlgorithm pln_method = Parameters.PlanningAlgorithm.HEFT;
             ReplicaCatalog.FileSystem file_system = ReplicaCatalog.FileSystem.SHARED;
 
             /**
@@ -138,7 +120,7 @@ public class WorkflowSimMultipleWorkflowsExample1 {
             /**
              * Initialize static parameters
              */
-            Parameters.init(vmNum, daxPaths, null,
+            Parameters.init(vmNum, daxPath, null,
                     null, op, cp, sch_method, pln_method,
                     null, 0);
             ReplicaCatalog.init(file_system);
@@ -146,41 +128,49 @@ public class WorkflowSimMultipleWorkflowsExample1 {
             // before creating any entities.
             int num_user = 1;   // number of grid users
             Calendar calendar = Calendar.getInstance();
-            boolean trace_flag = true;  // mean trace events
+            boolean trace_flag = false;  // mean trace events
 
             // Initialize the CloudSim library
             CloudSim.init(num_user, calendar, trace_flag);
 
             WorkflowDatacenter datacenter0 = createDatacenter("Datacenter_0");
+            WorkflowDatacenter datacenter1 = createDatacenter("Datacenter_1");
 
             /**
-             * Create a WorkflowPlanner with one schedulers.
+             * Create a WorkflowPlanner with one scheduler.
              */
             WorkflowPlanner wfPlanner = new WorkflowPlanner("planner_0", 1);
             /**
-             * Create a WorkflowEngine.
+             * Create a WorkflowEngine. Attach it to the workflow planner
              */
             WorkflowEngine wfEngine = wfPlanner.getWorkflowEngine();
             /**
-             * Create a list of VMs.The userId of a vm is basically the id of
-             * the scheduler that controls this vm.
+             * Create two list of VMs. The trick is that make sure all vmId is
+             * unique so we need to index vm from a base (in this case
+             * Parameters.getVmNum/2 for the second vmlist1).
              */
             List<CondorVM> vmlist0 = createVM(wfEngine.getSchedulerId(0), Parameters.getVmNum());
 
             /**
-             * Submits this list of vms to this WorkflowEngine.
+             * Submits these lists of vms to this WorkflowEngine.
              */
             wfEngine.submitVmList(vmlist0, 0);
 
             /**
-             * Binds the data centers with the scheduler.
+             * Binds the data centers with the scheduler id. This scheduler
+             * controls two data centers. Make sure your data center is not very
+             * big otherwise all the vms will be allocated to the first
+             * available data center In the future, the vm allocation algorithm
+             * should be improved.
              */
             wfEngine.bindSchedulerDatacenter(datacenter0.getId(), 0);
+            wfEngine.bindSchedulerDatacenter(datacenter1.getId(), 0);
 
             CloudSim.startSimulation();
             List<Job> outputList0 = wfEngine.getJobsReceivedList();
             CloudSim.stopSimulation();
             printJobList(outputList0);
+            WritetoResultWindow(outputList0);
         } catch (Exception e) {
             Log.printLine("The simulation has been terminated due to an unexpected error");
         }
@@ -198,14 +188,14 @@ public class WorkflowSimMultipleWorkflowsExample1 {
         //    a Machine.
         for (int i = 1; i <= 20; i++) {
             List<Pe> peList1 = new ArrayList<>();
-            int mips = 2000;
+            int mips = 10000;
             // 3. Create PEs and add these into the list.
             //for a quad-core machine, a list of 4 PEs is required:
             peList1.add(new Pe(0, new PeProvisionerSimple(mips))); // need to store Pe id and MIPS Rating
             peList1.add(new Pe(1, new PeProvisionerSimple(mips)));
 
             int hostId = 0;
-            int ram = 2048; //host memory (MB)
+            int ram = 16384; //host memory (MB)
             long storage = 1000000; //host storage
             int bw = 10000;
             hostList.add(
@@ -216,10 +206,10 @@ public class WorkflowSimMultipleWorkflowsExample1 {
                             storage,
                             peList1,
                             new VmSchedulerTimeShared(peList1))); // This is our first machine
-            hostId++;
+            //hostId++;
         }
 
-        // 5. Create a DatacenterCharacteristics object that stores the
+        // 4. Create a DatacenterCharacteristics object that stores the
         //    properties of a data center: architecture, OS, list of
         //    Machines, allocation policy: time- or space-shared, time zone
         //    and its price (G$/Pe time unit).
@@ -233,14 +223,18 @@ public class WorkflowSimMultipleWorkflowsExample1 {
         double costPerBw = 0.1;			// the cost of using bw in this resource
         LinkedList<Storage> storageList = new LinkedList<>();	//we are not adding SAN devices by now
         WorkflowDatacenter datacenter = null;
+
         DatacenterCharacteristics characteristics = new DatacenterCharacteristics(
                 arch, os, vmm, hostList, time_zone, cost, costPerMem, costPerStorage, costPerBw);
-        // 6. Finally, we need to create a storage object.
+
+        // 5. Finally, we need to create a storage object.
         /**
          * The bandwidth within a data center in MB/s.
          */
         int maxTransferRate = 15;// the number comes from the futuregrid site, you can specify your bw
+
         try {
+            // Here we set the bandwidth to be 15MB/s
             HarddriveStorage s1 = new HarddriveStorage(name, 1e12);
             s1.setMaxTransferRate(maxTransferRate);
             storageList.add(s1);
@@ -252,23 +246,48 @@ public class WorkflowSimMultipleWorkflowsExample1 {
     }
 
     /**
+     * Creates output files and returns the printwriter
+     * 
+     * @param list
+     */
+    protected static void WritetoResultWindow(List<Job> jobList) {
+        String[] columns = {"Job ID", "Task ID", "Task MI", "File Size", "VM ID", "Start Time", "Finish Time", "CPU Time"};
+        List<Object[]> resultRows = new ArrayList<>();
+
+        for(Job job: jobList) {
+            Object[] row = new Object[]{job.getCloudletId(), job.getTaskList(), job.getCloudletLength(), job.getTotalFileSize(), job.getVmId(), job.getExecStartTime(), job.getFinishTime(), job.getActualCPUTime()};
+            resultRows.add(row);
+        }
+
+        Object[][] dataArray = new Object[resultRows.size()][];
+        dataArray = resultRows.toArray(dataArray);
+
+        ResultWindow.showResultsInTable(dataArray, columns);
+    }
+
+    /**
      * Prints the job objects
      *
      * @param list list of jobs
      */
     protected static void printJobList(List<Job> list) {
-        int size = list.size();
-        Job job;
         String indent = "    ";
         Log.printLine();
         Log.printLine("========== OUTPUT ==========");
-        Log.printLine("Cloudlet ID" + indent + "STATUS" + indent
+        Log.printLine("Job ID" + indent + "Task ID" + indent + "STATUS" + indent
                 + "Data center ID" + indent + "VM ID" + indent + indent
                 + "Time" + indent + "Start Time" + indent + "Finish Time" + indent + "Depth");
         DecimalFormat dft = new DecimalFormat("###.##");
-        for (int i = 0; i < size; i++) {
-            job = list.get(i);
+        for (Job job : list) {
             Log.print(indent + job.getCloudletId() + indent + indent);
+            if (job.getClassType() == ClassType.STAGE_IN.value) {
+                Log.print("Stage-in");
+            }
+            for (Task task : job.getTaskList()) {
+                Log.print(task.getCloudletId() + ",");
+            }
+            Log.print(indent);
+
             if (job.getCloudletStatus() == Cloudlet.SUCCESS) {
                 Log.print("SUCCESS");
                 Log.printLine(indent + indent + job.getResourceId() + indent + indent + indent + job.getVmId()
