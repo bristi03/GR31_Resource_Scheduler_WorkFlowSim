@@ -26,6 +26,12 @@ import org.workflowsim.CondorVM;
 import org.workflowsim.FileItem;
 import org.workflowsim.Task;
 import org.workflowsim.utils.Parameters;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import org.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 /**
  * The HEFT planning algorithm.
@@ -33,7 +39,7 @@ import org.workflowsim.utils.Parameters;
  * @author Pedro Paulo Vezzá Campos
  * @date Oct 12, 2013
  */
-public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
+public class HEFTMLPlanningAlgorithm extends BasePlanningAlgorithm {
 
     private Map<Task, Map<CondorVM, Double>> computationCosts;
     private Map<Task, Map<Task, Double>> transferCosts;
@@ -69,7 +75,7 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
         }
     }
 
-    public HEFTPlanningAlgorithm() {
+    public HEFTMLPlanningAlgorithm() {
         computationCosts = new HashMap<>();
         transferCosts = new HashMap<>();
         rank = new HashMap<>();

@@ -86,11 +86,15 @@ public class WorkFlowSimMain {
              * the data center or the host doesn't have sufficient resources the
              * exact vmNum would be smaller than that. Take care.
              */
-            int vmNum = Integer.parseInt(args[0]);//number of vms;
+//            int vmNum = Integer.parseInt(args[0]);//number of vms;
+            String daxPath = "D:/Final Year Project/GR31_Resource_Scheduler_WorkFlowSim/WorkflowSim/config/dax/Montage_50.xml";
+            String mode = "static";
+            int vmNum = 5;
+
             /**
              * Should change this based on real physical path
              */
-            String daxPath = String.join("/","D:/Resource_Schedular/WorkflowSim/config/dax",args[1]);
+//            String daxPath = String.join("/","D:/Resource_Schedular/WorkflowSim/config/dax",args[1]);
             File daxFile = new File(daxPath);
             if (!daxFile.exists()) {
                 Log.printLine("Warning: Please replace daxPath with the physical path in your working environment!");
@@ -172,6 +176,7 @@ public class WorkFlowSimMain {
             printJobList(outputList0);
             WritetoResultWindow(outputList0);
         } catch (Exception e) {
+            e.printStackTrace();
             Log.printLine("The simulation has been terminated due to an unexpected error");
         }
     }
@@ -248,7 +253,7 @@ public class WorkFlowSimMain {
     /**
      * Creates output files and returns the printwriter
      * 
-     * @param list
+     * @paramlist
      */
     protected static void WritetoResultWindow(List<Job> jobList) {
         String[] columns = {"Job ID", "Task ID", "Task MI", "File Size", "VM ID", "Start Time", "Finish Time", "CPU Time"};

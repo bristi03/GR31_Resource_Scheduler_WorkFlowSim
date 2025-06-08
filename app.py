@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 import joblib
 import numpy as np
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -11,6 +12,10 @@ model = joblib.load("model/execution_time_predictor.pkl")
 def predict():
     data = request.json
     try:
+        feature_names = [
+            "TaskMI", "TaskSize", "Job_Depth", "MIPs",
+            "Bandwidth", "VM_Memory", "PES", "TaskMI_per_MIPS"
+        ]
         features = [
             data["TaskMI"],
             data["TaskSize"],
@@ -21,8 +26,8 @@ def predict():
             data["PES"],
             data["TaskMI_per_MIPS"]
         ]
-        features_array = np.array(features).reshape(1, -1)
-        predicted_time = model.predict(features_array)[0]
+        df = pd.DataFrame([features], columns=feature_names)
+        predicted_time = model.predict(df)[0]
         return jsonify({"predicted_time": float(predicted_time)})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
