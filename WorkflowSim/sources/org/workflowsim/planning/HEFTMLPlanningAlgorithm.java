@@ -88,7 +88,7 @@ public class HEFTMLPlanningAlgorithm extends BasePlanningAlgorithm {
      */
     @Override
     public void run() {
-        Log.printLine("HEFT planner running with " + getTaskList().size()
+        Log.printLine("HEFT with Predictor planner running with " + getTaskList().size()
                 + " tasks.");
 
         averageBandwidth = calculateAverageBandwidth();
