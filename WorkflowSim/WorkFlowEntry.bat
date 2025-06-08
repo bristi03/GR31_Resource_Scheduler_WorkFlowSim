@@ -38,6 +38,12 @@ goto parse_args
 :done_parse
 
 echo.
+echo Launching Flask Server in a new window...
+start cmd /k "python app.py"
+
+timeout /t 3 >nul
+
+echo.
 echo Launching WorkflowSim with:
 echo   VMs     : %VM_NUM%
 echo   DAX     : %DAX_FILE%
