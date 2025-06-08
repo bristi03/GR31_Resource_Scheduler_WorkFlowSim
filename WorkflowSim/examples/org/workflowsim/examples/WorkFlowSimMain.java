@@ -103,7 +103,7 @@ public class WorkFlowSimMain {
              * override the result of the scheduler
              */
             Parameters.SchedulingAlgorithm sch_method = Parameters.SchedulingAlgorithm.STATIC;
-            Parameters.PlanningAlgorithm pln_method = Parameters.PlanningAlgorithm.HEFT;
+            Parameters.PlanningAlgorithm pln_method = Parameters.PlanningAlgorithm.MLHEFT;
             ReplicaCatalog.FileSystem file_system = ReplicaCatalog.FileSystem.SHARED;
 
             /**

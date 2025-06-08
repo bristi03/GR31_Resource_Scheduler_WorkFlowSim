@@ -187,6 +187,9 @@ public final class WorkflowPlanner extends SimEntity {
             case HEFT:
                 planner = new HEFTPlanningAlgorithm();
                 break;
+            case MLHEFT:
+                planner = new HEFTMLPlanningAlgorithm();
+                break;
             case DHEFT:
                 planner = new DHEFTPlanningAlgorithm();
                 break;
